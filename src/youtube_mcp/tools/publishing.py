@@ -5,6 +5,7 @@ import os
 from googleapiclient.http import MediaFileUpload
 
 from youtube_mcp.server import auth, mcp, quota
+from youtube_mcp.utils.fetch import download_to_temp
 
 
 @mcp.tool()
@@ -19,7 +20,9 @@ def youtube_upload_video(
 ) -> dict:
     """Upload a video to YouTube.
 
-    Costs 1,600 quota units. Video is uploaded as private by default.
+    Uses 1 of the 100 daily uploads (separate quota bucket). Video is uploaded as private
+    by default. For files that live on Google Drive or any URL (the usual case when this
+    server runs remotely), use youtube_upload_from_url instead.
 
     Args:
         file_path: Absolute path to the video file
@@ -68,7 +71,7 @@ def youtube_upload_video(
         "privacy": response["status"]["privacyStatus"],
         "publish_at": response["status"].get("publishAt"),
         "url": f"https://www.youtube.com/watch?v={response['id']}",
-        "quota_cost": 1600,
+        "quota_cost": {"uploads_bucket": 1},
     }
 
 
@@ -152,22 +155,57 @@ def youtube_update_video(
     }
 
 
+def _image_mimetype(path: str) -> str | None:
+    """Sniff the image type (downloaded files have no extension)."""
+    with open(path, "rb") as f:
+        head = f.read(8)
+    if head.startswith(b"\x89PNG"):
+        return "image/png"
+    if head.startswith(b"\xff\xd8"):
+        return "image/jpeg"
+    if head.startswith(b"GIF8"):
+        return "image/gif"
+    if head.startswith(b"BM"):
+        return "image/bmp"
+    return None
+
+
 @mcp.tool()
-def youtube_set_thumbnail(video_id: str, file_path: str) -> dict:
+def youtube_set_thumbnail(
+    video_id: str,
+    file_path: str | None = None,
+    image_url: str | None = None,
+) -> dict:
     """Upload a custom thumbnail for a video.
+
+    Provide either a local file path or a URL (a Google Drive share link works if the
+    file is shared as "Anyone with the link").
 
     Args:
         video_id: YouTube video ID
         file_path: Absolute path to the thumbnail image (JPEG, PNG, GIF, BMP; max 2MB)
+        image_url: URL of the thumbnail image (alternative to file_path)
     """
-    if not os.path.exists(file_path):
+    tmp = None
+    if image_url:
+        try:
+            tmp = download_to_temp(image_url, max_bytes=2 * 1024 * 1024)
+        except Exception as e:
+            return {"error": f"Could not download thumbnail: {e}"}
+        file_path = str(tmp)
+    if not file_path or not os.path.exists(file_path):
         return {"error": f"File not found: {file_path}"}
 
-    quota.consume("thumbnail_set")
-    youtube = auth.build_youtube_service()
+    try:
+        quota.consume("thumbnail_set")
+        youtube = auth.build_youtube_service()
 
-    media = MediaFileUpload(file_path)
-    response = youtube.thumbnails().set(videoId=video_id, media_body=media).execute()
+        mimetype = _image_mimetype(file_path) if tmp else None  # local: guess by extension
+        media = MediaFileUpload(file_path, mimetype=mimetype)
+        response = youtube.thumbnails().set(videoId=video_id, media_body=media).execute()
+    finally:
+        if tmp:
+            tmp.unlink(missing_ok=True)
 
     items = response.get("items", [])
     if items:
