@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "youtube-studio-mcp"
-version = "0.3.0"
+version = "0.4.0"
 description = "A comprehensive MCP server for YouTube Data API, Analytics API, and Reporting API"
 readme = "README.md"
 license = "MIT"
@@ -24,12 +24,14 @@ classifiers = [
 ]
 
 dependencies = [
-    "mcp>=1.0.0",
+    "mcp>=1.10,<2",
     "google-api-python-client>=2.100.0",
     "google-auth>=2.23.0",
     "google-auth-oauthlib>=1.1.0",
     "google-auth-httplib2>=0.1.0",
     "youtube-transcript-api>=1.0.0",
+    "httpx>=0.27",
+    "uvicorn>=0.30",
 ]
 
 [project.optional-dependencies]
