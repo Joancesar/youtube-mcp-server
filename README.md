@@ -2,9 +2,10 @@
 
 A comprehensive [Model Context Protocol](https://modelcontextprotocol.io/) server for the YouTube Data API v3, Analytics API, and Reporting API. Gives AI assistants full access to your YouTube channel — analytics, video management, comments, and more.
 
-**40 tools** covering:
+**40+ tools** covering:
 - Channel & video data
 - YouTube Analytics (performance, audience, retention, revenue)
+- Studio-style insights (content table, retention drop-offs, search terms, impressions & CTR, weekly report)
 - Video publishing & playlist management
 - Transcript extraction
 - YouTube SEO (search suggestions, trending)
@@ -32,7 +33,7 @@ Existing YouTube MCP servers focus narrowly on transcript scraping or basic sear
 | SEO / trending / suggestions | Yes | No |
 | Transcript extraction | Yes | Yes |
 | Quota tracking | Yes | No |
-| Total tools | 40 | 1-5 |
+| Total tools | 40+ | 1-5 |
 
 ## Prerequisites
 
@@ -63,6 +64,8 @@ Enable all three APIs in **APIs & Services > Library**:
 4. Add the Google account that **owns** your YouTube channel as a **test user**
 
 > **Important:** You must sign in with the Google account that **owns** the YouTube channel, not a manager. Only the owner account can access Analytics data.
+
+> **Tip:** While the app's publishing status is **Testing**, Google expires refresh tokens after 7 days and you must re-authorize every week. For personal use, set the publishing status to **In production** (Google Auth Platform > Audience > Publish app). Without verification you will see an "unverified app" warning on consent and are limited to 100 users, but tokens no longer expire weekly.
 
 ### 4. Create OAuth Credentials
 
@@ -201,6 +204,16 @@ On first use, the server will open a browser window for Google OAuth consent. Si
 | `youtube_analytics_revenue` | Revenue breakdown (requires YouTube Partner Program) |
 | `youtube_analytics_revenue_by_video` | Per-video revenue |
 | `youtube_analytics_retention` | Audience retention curve for a video |
+
+### Analytics — Insights (5 tools)
+
+| Tool | Description |
+|------|-------------|
+| `youtube_content_table` | Studio-style "Content" table: one row per video with title, type (short/long/live), duration, views, engaged views, watch time, avg duration, % viewed, subs per 1,000 views |
+| `youtube_retention_insights` | Retention curve turned into checkpoints (0:30, 1:00, 3:00, 25/50/75%), biggest drop-offs as timestamps, spikes, and relative retention |
+| `youtube_traffic_source_detail` | Detail inside a traffic source: search terms, suggesting videos (with titles), external sites, with avg seconds per view |
+| `youtube_reach` | Thumbnail impressions and impressions CTR per video (Reporting API `channel_reach_basic_a1`; the first call schedules the job, data arrives after ~24-48 h) |
+| `youtube_channel_report` | Weekly/monthly report vs the previous period: totals for all/Shorts/long-form, top videos and traffic source shares |
 
 ### Publishing (4 tools)
 
