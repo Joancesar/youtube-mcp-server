@@ -107,6 +107,7 @@ from youtube_mcp.tools import playlists  # noqa: E402, F401
 from youtube_mcp.tools import comments  # noqa: E402, F401
 from youtube_mcp.tools import reporting  # noqa: E402, F401
 from youtube_mcp.tools import media  # noqa: E402, F401
+from youtube_mcp.tools import insights  # noqa: E402, F401
 
 
 def main():
